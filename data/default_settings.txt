@@ -1,0 +1,13 @@
+0.75
+Letter
+RGB
+5
+100
+48
+78
+True
+None
+False
+False
+False
+0.5
