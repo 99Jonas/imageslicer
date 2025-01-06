@@ -1060,16 +1060,19 @@ class ImageSlicer(QMainWindow):
         else:
             pw -= float(marg) * 2
             ph -= float(marg) * 2
+            ready = True
 
             if pw <= 0 or ph <= 0:
+                ready = False
                 pw += float(marg) * 2
                 ph += float(marg) * 2
 
             w, h = img.size
 
+            w_px = round(pw / pxl_size)
+            h_px = round(ph / pxl_size)
+
             if port:
-                w_px = round(pw / pxl_size)
-                h_px = round(ph / pxl_size)
                 if pw / ph < w / h:
                     h_px = round((h * w_px) / w)
                     target_resolution = (w_px, h_px)
@@ -1077,11 +1080,6 @@ class ImageSlicer(QMainWindow):
                     w_px = round((w * h_px) / h)
                     target_resolution = (w_px, h_px)
             else:
-                w_px = round(ph / pxl_size)
-                h_px = round(pw / pxl_size)
-                tpw = pw
-                pw = ph
-                ph = tpw
                 if pw / ph > w / h:
                     w_px = round((w * h_px) / h)
                     target_resolution = (w_px, h_px)
@@ -1094,8 +1092,9 @@ class ImageSlicer(QMainWindow):
 
             clr = (255, 255, 255)
 
-            pw += float(marg) * 2
-            ph += float(marg) * 2
+            if ready:
+                pw += float(marg) * 2
+                ph += float(marg) * 2
 
             w_px = round(pw / pxl_size)
             h_px = round(ph / pxl_size)
