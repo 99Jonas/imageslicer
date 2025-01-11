@@ -1008,7 +1008,7 @@ class ImageSlicer(QMainWindow):
         players_hand = [deck.draw_card() for _ in range(2)]
         if 1 in players_hand and 10 in players_hand:
             message = f"High Score: {self.max_score if self.max_score >= self.current_score else self.current_score}\nCurrent Score: {self.current_score}\nYour Hand: {[str(card) if card != 1 else f"1/11" for card in players_hand]}\nYour Total: {player_hand_count(players_hand)}\nBlackjack!"
-            self.current_score += 1
+            self.current_score += 1.5
             BlackJackShow(message)
         dealers_hand = [deck.draw_card() for _ in range(2)]
         while True:
@@ -1029,6 +1029,7 @@ class ImageSlicer(QMainWindow):
                 dealers_score = player_hand_count(dealers_hand)
                 if player_score == dealers_score:
                     BlackJackShow(f"High Score: {self.max_score if self.max_score >= self.current_score else self.current_score}\nCurrent Score: {self.current_score}\nYour Hand: {[str(card) if card != 1 else f"1/11" for card in players_hand]}\nYour Total: {player_hand_count(players_hand)}\nDealer's Hand: {[str(card) if card != 1 else f"1/11" for card in dealers_hand]}\nDealer's Total: {player_hand_count(dealers_hand)}\nPush!")
+                    self.current_score += 0.5
                     good = self.blackjack()
                     if not good:
                         return False
