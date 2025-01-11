@@ -9,6 +9,7 @@ import os
 import numpy as np
 import openai
 import requests
+import random
 
 
 def check_key(api_key):
@@ -54,6 +55,24 @@ def add_gcode(gcode, pw, cpec):
         gcode += "G1 X3.75 Y0\nM74 A1 B0 C0 D0\nG1 X9.75 Y0\nM74 A1 B0 C0 D0\n"
         gcode += f"G1 X10.5 Y0\nM74 A1 B0 C0 D0\nG1 X11.25 Y0\nM74 A1 B0 C0 D0\nG92 X{pw - 17.5} Y{1.5}\nG0 X0 Y0"
     return gcode
+
+def player_hand_count(hand):
+    num_aces = hand.count(1)
+    non_ace_hand_value = sum([card if card != 1 else 0 for card in hand])
+    possible_ace_values = []
+    for x in range(num_aces + 1):
+        possible_ace_values.append(num_aces + (10 * x))
+    if num_aces == 0:
+        possible_ace_values.append(0)
+    possible_values = [value + non_ace_hand_value for value in possible_ace_values]
+    possible_legal_values = []
+    for value in possible_values:
+        if value <= 21:
+            possible_legal_values.append(value)
+    if len(possible_legal_values) != 0:
+        return max(possible_legal_values)
+    else:
+        return non_ace_hand_value
 
 
 def hex_to_rgb(hex_color):
@@ -137,22 +156,6 @@ class ListEditor(QDialog):
 
         self.resize(600, 400)
 
-
-class Error(QDialog):
-    def __init__(self, error):
-        super().__init__()
-        self.setWindowTitle("Error")
-
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
-
-        self.error_message = QLabel(error, self)
-        self.layout.addWidget(self.error_message)
-
-        self.ok_button = QPushButton("Okay", self)
-        self.ok_button.clicked.connect(self.accept)
-        self.layout.addWidget(self.ok_button)
-
     def addItem(self, text):
         itemWidget = ListItemWidget(text, self.editItem, lambda: self.deleteItem(itemWidget))
         item = QListWidgetItem()
@@ -186,6 +189,22 @@ class Error(QDialog):
         self.items = [self.listWidget.itemWidget(self.listWidget.item(i)).lineEdit.text() for i in
                       range(self.listWidget.count())]
         super().accept()
+
+
+class Error(QDialog):
+    def __init__(self, error, parent=None):
+        super(Error, self).__init__(parent)
+        self.setWindowTitle("Error")
+
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+
+        self.error_message = QLabel(error, self)
+        self.layout.addWidget(self.error_message)
+
+        self.ok_button = QPushButton("Okay", self)
+        self.ok_button.clicked.connect(self.accept)
+        self.layout.addWidget(self.ok_button)
 
 
 class ToggleSwitch(QWidget):
@@ -313,6 +332,26 @@ class ClickableLabel(QLabel):
             painter = QPainter(self)
             painter.setBrush(QColor(255, 255, 0, 100))
             painter.drawRect(self.rect())
+
+
+class EasterEgg(QDialog):
+    def __init__(self, parent=None):
+        super(EasterEgg, self).__init__(parent)
+
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+
+        self.question_message = QLabel("Do you want to?", self)
+        self.layout.addWidget(self.question_message)
+
+        self.yes_button = QPushButton("Yes", self)
+        self.yes_button.clicked.connect(self.accept)
+        self.layout.addWidget(self.yes_button)
+
+        self.no_button = QPushButton("No", self)
+        self.no_button.clicked.connect(self.reject)
+        self.no_button.setDefault(True)
+        self.layout.addWidget(self.no_button)
 
 
 class CustomPageSize(QDialog):
@@ -494,6 +533,51 @@ class ImagePickerDialog(QDialog):
         if self.selected_image_url:
             self.accept()
 
+class Deck():
+    def __init__(self):
+        deck = [rank for rank in range(1, 14) for _ in range(4)]
+        self.deck = [card if card < 10 else 10 for card in deck]
+
+    def draw_card(self):
+        return self.deck.pop()
+
+    def shuffle_deck(self):
+        random.shuffle(self.deck)
+
+
+class BlackJackPlay(QDialog):
+    def __init__(self, hand, dealers_hand, high_score, current_score):
+        super().__init__()
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+
+        self.question_message = QLabel(f"High Score: {high_score if high_score >= current_score else current_score}\nCurrent Score: {current_score}\nYour Hand: {[str(card) if card != 1 else f"1/11" for card in hand]}\nYour Total: {player_hand_count(hand)}\nDealer's Hand: {dealers_hand[0] if dealers_hand[0] != 0 else "1/11"}", self)
+        self.layout.addWidget(self.question_message)
+
+        self.yes_button = QPushButton("Hit", self)
+        self.yes_button.clicked.connect(self.accept)
+        self.layout.addWidget(self.yes_button)
+
+        self.no_button = QPushButton("Stand", self)
+        self.no_button.clicked.connect(self.reject)
+        self.layout.addWidget(self.no_button)
+
+
+class BlackJackShow(QDialog):
+    def __init__(self, message):
+        super().__init__()
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+
+        self.question_message = QLabel(message, self)
+        self.layout.addWidget(self.question_message)
+
+        self.yes_button = QPushButton("Ok", self)
+        self.yes_button.clicked.connect(self.accept)
+        self.layout.addWidget(self.yes_button)
+
+        self.exec_()
+
 
 class ImageSlicer(QMainWindow):
     def __init__(self):
@@ -516,6 +600,10 @@ class ImageSlicer(QMainWindow):
         self.rotated = False
         self.bed_width = 687
         self.bed_height = 640
+        self.egg_url = "https://www.akc.org/wp-content/uploads/2017/11/Pembroke-Welsh-Corgi-standing-outdoors-in-the-fall.jpg"
+        with open('data/default_settings.txt', 'r') as file:
+            self.max_score = int(file.readlines()[13].strip())
+        self.current_score = 0
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -839,6 +927,44 @@ class ImageSlicer(QMainWindow):
             file.write(f"{str(self.rotate_checkbox.isChecked())}\n")
             file.write(f"{str(self.cpec_checkbox.isChecked())}\n")
             file.write(f"{str(self.solenoid_time.text())}\n")
+            file.write(f"{str(self.max_score)}\n")
+
+    def save_score(self):
+        settings_file = 'data/default_settings.txt'
+
+        with open(settings_file, 'r') as file:
+            lines = file.readlines()
+            if len(lines) == 14:
+                set_pixel_size = lines[0].strip()
+                set_page_size = lines[1].strip()
+                set_color_type = lines[2].strip()
+                set_margin = lines[3].strip()
+                set_speed = lines[4].strip()
+                set_x_pen_dis = lines[5].strip()
+                set_y_pen_dis = lines[6].strip()
+                set_toggle_switch = lines[7].strip() == 'True'
+                set_ai_key = lines[8].strip()
+                set_advanced_pos_checkbox = lines[9].strip() == "True"
+                set_rotate_checkbox = lines[10].strip() == "True"
+                set_cpec_checkbox = lines[11].strip() == "True"
+                set_solenoid_time = lines[12].strip()
+                set_current_score = lines[13].strip()
+
+        with open(settings_file, 'w') as file:
+            file.write(f"{set_pixel_size}\n")
+            file.write(f"{set_page_size}\n")
+            file.write(f"{set_color_type}\n")
+            file.write(f"{set_margin}\n")
+            file.write(f"{set_speed}\n")
+            file.write(f"{set_x_pen_dis}\n")
+            file.write(f"{set_y_pen_dis}\n")
+            file.write(f"{str(set_toggle_switch)}\n")
+            file.write(f"{set_ai_key}\n")
+            file.write(f"{str(set_advanced_pos_checkbox)}\n")
+            file.write(f"{str(set_rotate_checkbox)}\n")
+            file.write(f"{str(set_cpec_checkbox)}\n")
+            file.write(f"{set_solenoid_time}\n")
+            file.write(f"{str(self.current_score)}\n")
 
     def load_default_settings(self):
         self.save_settings.setEnabled(False)
@@ -847,7 +973,7 @@ class ImageSlicer(QMainWindow):
         if os.path.exists(settings_file):
             with open(settings_file, 'r') as file:
                 lines = file.readlines()
-                if len(lines) == 13:
+                if len(lines) == 14:
                     self.pixel_size.setText(lines[0].strip())
                     self.page_size.setCurrentText(lines[1].strip())
                     self.color_type.setCurrentText(lines[2].strip())
@@ -861,6 +987,7 @@ class ImageSlicer(QMainWindow):
                     self.rotate_checkbox.setChecked((lines[10].strip() == "True"))
                     self.cpec_checkbox.setChecked((lines[11].strip() == "True"))
                     self.solenoid_time.setText(lines[12].strip())
+                    self.max_score = int(lines[13].strip())
         else:
             os.makedirs('data')
             with open(settings_file, 'w') as file:
@@ -874,6 +1001,44 @@ class ImageSlicer(QMainWindow):
             if gcode_file_path:
                 with open(gcode_file_path, 'w') as file:
                     file.write(self.gcod)
+
+    def blackjack(self):
+        deck = Deck()
+        deck.shuffle_deck()
+        players_hand = [deck.draw_card() for _ in range(2)]
+        dealers_hand = [deck.draw_card() for _ in range(2)]
+        while True:
+            dialog = BlackJackPlay(players_hand, dealers_hand, self.max_score, self.current_score)
+            if dialog.exec_() == QDialog.Accepted:
+                players_hand.append(deck.draw_card())
+                if player_hand_count(players_hand) > 21:
+                    message = f"High Score: {self.max_score if self.max_score >= self.current_score else self.current_score}\nCurrent Score: {self.current_score}\nYour Hand: {[str(card) if card != 1 else f"1/11" for card in players_hand]}\nYour Total: {player_hand_count(players_hand)}\nBust!"
+                    BlackJackShow(message)
+                    return False
+            else:
+                player_score = player_hand_count(players_hand)
+                if player_score > 21:
+                    BlackJackShow(f"High Score: {self.max_score if self.max_score >= self.current_score else self.current_score}\nCurrent Score: {self.current_score}\nYour Hand: {[str(card) if card != 1 else f"1/11" for card in players_hand]}\nYour Total: {player_hand_count(players_hand)}\nBust!")
+                    return False
+                while player_hand_count(dealers_hand) <= 16:
+                    dealers_hand.append(deck.draw_card())
+                dealers_score = player_hand_count(dealers_hand)
+                if player_score == dealers_score:
+                    BlackJackShow(f"High Score: {self.max_score if self.max_score >= self.current_score else self.current_score}\nCurrent Score: {self.current_score}\nYour Hand: {[str(card) if card != 1 else f"1/11" for card in players_hand]}\nYour Total: {player_hand_count(players_hand)}\nDealer's Hand: {[str(card) if card != 1 else f"1/11" for card in dealers_hand]}\nDealer's Total: {player_hand_count(dealers_hand)}\nPush!")
+                    good = self.blackjack()
+                    if not good:
+                        return False
+                elif player_score < dealers_score and dealers_score < 22:
+                    BlackJackShow(f"High Score: {self.max_score if self.max_score >= self.current_score else self.current_score}\nCurrent Score: {self.current_score}\nYour Hand: {[str(card) if card != 1 else f"1/11" for card in players_hand]}\nYour Total: {player_hand_count(players_hand)}\nDealer's Hand: {[str(card) if card != 1 else f"1/11" for card in dealers_hand]}\nDealer's Total: {player_hand_count(dealers_hand)}\nYou Lose!")
+                    return False
+                else:
+                    BlackJackShow(f"High Score: {self.max_score if self.max_score >= self.current_score else self.current_score}\nCurrent Score: {self.current_score}\nYour Hand: {[str(card) if card != 1 else f"1/11" for card in players_hand]}\nYour Total: {player_hand_count(players_hand)}\nDealer's Hand: {[str(card) if card != 1 else f"1/11" for card in dealers_hand]}\nDealer's Total: {player_hand_count(dealers_hand)}\nYou Win!")
+                    self.current_score += 1
+                    good = self.blackjack()
+                    if not good:
+                        return False
+
+
 
     def slice(self):
         if hasattr(self, 'image_path'):
@@ -1333,7 +1498,6 @@ class ImageSlicer(QMainWindow):
         return image_urls
 
     def search(self):
-        self.search_button.setEnabled(False)
         self.last_search = self.search_text.text()
         self.last_search_toggle = self.search_toggle.isChecked()
         self.first_search = False
@@ -1354,12 +1518,21 @@ class ImageSlicer(QMainWindow):
                         if 'link' in item:
                             image_url = item['link']
                             images.append(image_url)
+                if striped_search == "corgi":
+                    images[0] = self.egg_url
                 if len(images) == 4:
                     pick_image = self.select_image(images)
                     if pick_image[1]:
                         picked_image = pick_image[0]
                         self.download_image(picked_image, 'data/tobesliced.png')
                         self.open_image(True)
+                        if picked_image == self.egg_url:
+                            dialog = EasterEgg()
+                            if dialog.exec_() == QDialog.Accepted:
+                                self.current_score = 0
+                                self.blackjack()
+                                if self.current_score > self.max_score:
+                                    self.save_score()
 
             else:
                 if self.ai_key == 'None':
@@ -1400,6 +1573,7 @@ class ImageSlicer(QMainWindow):
             return selected_image_url, result
         else:
             selected_image_url = None
+            self.search_button.setEnabled(True)
             return selected_image_url, result
 
     def download_image(self, url, save_path):
