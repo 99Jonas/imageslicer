@@ -551,7 +551,7 @@ class BlackJackPlay(QDialog):
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
-        self.question_message = QLabel(f"High Score: {high_score if high_score >= current_score else current_score}\nCurrent Score: {current_score}\nYour Hand: {[str(card) if card != 1 else f"1/11" for card in hand]}\nYour Total: {player_hand_count(hand)}\nDealer's Hand: {dealers_hand[0] if dealers_hand[0] != 0 else "1/11"}", self)
+        self.question_message = QLabel(f"High Score: {high_score if high_score >= current_score else current_score}\nCurrent Score: {current_score}\nYour Hand: {[str(card) if card != 1 else f"1/11" for card in hand]}\nYour Total: {player_hand_count(hand)}\nDealer's Hand: {dealers_hand[0] if dealers_hand[0] != 1 else "1/11"}", self)
         self.layout.addWidget(self.question_message)
 
         self.yes_button = QPushButton("Hit", self)
