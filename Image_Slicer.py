@@ -533,6 +533,7 @@ class ImagePickerDialog(QDialog):
         if self.selected_image_url:
             self.accept()
 
+
 class Deck():
     def __init__(self):
         deck = [rank for rank in range(1, 14) for _ in range(4)]
@@ -602,7 +603,7 @@ class ImageSlicer(QMainWindow):
         self.bed_height = 640
         self.egg_url = "https://www.akc.org/wp-content/uploads/2017/11/Pembroke-Welsh-Corgi-standing-outdoors-in-the-fall.jpg"
         with open('data/default_settings.txt', 'r') as file:
-            self.max_score = int(file.readlines()[13].strip())
+            self.max_score = float(file.readlines()[13].strip())
         self.current_score = 0
 
         self.central_widget = QWidget()
@@ -1006,15 +1007,18 @@ class ImageSlicer(QMainWindow):
         deck = Deck()
         deck.shuffle_deck()
         players_hand = [deck.draw_card() for _ in range(2)]
-        if 1 in players_hand and 10 in players_hand:
-            message = f"High Score: {self.max_score if self.max_score >= self.current_score else self.current_score}\nCurrent Score: {self.current_score}\nYour Hand: {[str(card) if card != 1 else f"1/11" for card in players_hand]}\nYour Total: {player_hand_count(players_hand)}\nBlackjack!"
-            self.current_score += 1.5
-            BlackJackShow(message)
         dealers_hand = [deck.draw_card() for _ in range(2)]
         if 1 in dealers_hand and 10 in dealers_hand:
             message = f"High Score: {self.max_score if self.max_score >= self.current_score else self.current_score}\nCurrent Score: {self.current_score}\nYour Hand: {[str(card) if card != 1 else f"1/11" for card in players_hand]}\nYour Total: {player_hand_count(players_hand)}\nDealer's Hand: {[str(card) if card != 1 else f"1/11" for card in dealers_hand]}\nDealer's Total: {player_hand_count(dealers_hand)}\nBlackjack! You Lose!"
             BlackJackShow(message)
             return False
+        if 1 in players_hand and 10 in players_hand:
+            message = f"High Score: {self.max_score if self.max_score >= self.current_score else self.current_score}\nCurrent Score: {self.current_score}\nYour Hand: {[str(card) if card != 1 else f"1/11" for card in players_hand]}\nYour Total: {player_hand_count(players_hand)}\nBlackjack!"
+            self.current_score += 1.5
+            BlackJackShow(message)
+            good = self.blackjack()
+            if not good:
+                return False
         while True:
             dialog = BlackJackPlay(players_hand, dealers_hand, self.max_score, self.current_score)
             if dialog.exec_() == QDialog.Accepted:
