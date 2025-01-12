@@ -120,7 +120,7 @@ class ListItemWidget(QWidget):
         self.editButton.setText("Edit")
 
 
-class ListEditor(QDialog):
+class CustomColor(QDialog):
     def __init__(self):
         super().__init__()
         self.layout = QVBoxLayout()
@@ -144,6 +144,13 @@ class ListEditor(QDialog):
         self.doneButton = QPushButton("Done")
         self.doneButton.clicked.connect(self.accept)
         self.layout.addWidget(self.doneButton)
+
+        self.use_last_checkbox = QCheckBox("Use Last", self)
+        self.use_last_checkbox.stateChanged.connect(self.use_last)
+        self.layout.addWidget(self.use_last_checkbox)
+        self.use_last_checkbox.setEnabled(False)
+        if os.path.exists('data/color_order.txt'):
+            self.use_last_checkbox.setEnabled(True)
 
         self.cancelButton = QPushButton("Cancel")
         self.cancelButton.clicked.connect(self.reject)
@@ -184,6 +191,24 @@ class ListEditor(QDialog):
             if self.listWidget.itemWidget(item) == widget:
                 self.listWidget.takeItem(i)
                 break
+
+    def use_last(self):
+        if self.use_last_checkbox.isChecked():
+            with open('data/color_order.txt', 'r') as file:
+                lines = file.readlines()
+                for line in lines:
+                    if line:
+                        self.addItem(line)
+        else:
+            with open('data/color_order.txt', 'r') as file:
+                lines = file.readlines()
+                for line in lines:
+                    if line:
+                        for i in range(self.listWidget.count()):
+                            item = self.listWidget.item(i)
+                            widget = self.listWidget.itemWidget(item)
+                            if widget and widget.lineEdit.text() == line:
+                                self.listWidget.takeItem(i)
 
     def accept(self):
         self.items = [self.listWidget.itemWidget(self.listWidget.item(i)).lineEdit.text() for i in
@@ -602,8 +627,11 @@ class ImageSlicer(QMainWindow):
         self.bed_width = 687
         self.bed_height = 640
         self.egg_url = "https://www.akc.org/wp-content/uploads/2017/11/Pembroke-Welsh-Corgi-standing-outdoors-in-the-fall.jpg"
-        with open('data/default_settings.txt', 'r') as file:
-            self.max_score = float(file.readlines()[13].strip())
+        if os.path.exists('data/default_settings.txt'):
+            with open('data/default_settings.txt', 'r') as file:
+                self.max_score = float(file.readlines()[13].strip())
+        else:
+            self.max_score = 0
         self.current_score = 0
 
         self.central_widget = QWidget()
@@ -1086,7 +1114,7 @@ class ImageSlicer(QMainWindow):
                 ]
             else:
                 pallete = []
-                palete_list = ListEditor()
+                palete_list = CustomColor()
                 if palete_list.exec_() == QDialog.Accepted:
                     hex_list = palete_list.items
                     hex_list = list(set(hex_list))
@@ -1545,6 +1573,7 @@ class ImageSlicer(QMainWindow):
                                 self.current_score = 0
                                 self.blackjack()
                                 if self.current_score > self.max_score:
+                                    self.max_score = self.current_score
                                     self.save_score()
 
             else:
