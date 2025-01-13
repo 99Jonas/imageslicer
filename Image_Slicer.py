@@ -193,22 +193,23 @@ class CustomColor(QDialog):
                 break
 
     def use_last(self):
-        if self.use_last_checkbox.isChecked():
+        if os.path.exists('data/color_order.txt'):
             with open('data/color_order.txt', 'r') as file:
-                lines = file.readlines()
+                lines = [line.strip() for line in file if line.strip()]
+
+            if self.use_last_checkbox.isChecked():
+                existing_items = {self.listWidget.itemWidget(self.listWidget.item(i)).lineEdit.text()
+                                  for i in range(self.listWidget.count())}
                 for line in lines:
-                    if line:
+                    if line not in existing_items:
                         self.addItem(line)
-        else:
-            with open('data/color_order.txt', 'r') as file:
-                lines = file.readlines()
-                for line in lines:
-                    if line:
-                        for i in range(self.listWidget.count()):
-                            item = self.listWidget.item(i)
-                            widget = self.listWidget.itemWidget(item)
-                            if widget and widget.lineEdit.text() == line:
-                                self.listWidget.takeItem(i)
+            else:
+                items_to_remove = set(lines)
+                for i in range(self.listWidget.count() - 1, -1, -1):
+                    item = self.listWidget.item(i)
+                    widget = self.listWidget.itemWidget(item)
+                    if widget and widget.lineEdit.text() in items_to_remove:
+                        self.listWidget.takeItem(i)
 
     def accept(self):
         self.items = [self.listWidget.itemWidget(self.listWidget.item(i)).lineEdit.text() for i in
@@ -1121,7 +1122,7 @@ class ImageSlicer(QMainWindow):
                     filtered_list = filter_colors(hex_list)
                     filename = 'data/color_order.txt'
                     with open(filename, 'w') as file:
-                        for item in filtered_list:
+                        for item in hex_list:
                             file.write(f"{item}\n")
                     for hex in hex_list:
                         rgb = hex_to_rgb(hex)
