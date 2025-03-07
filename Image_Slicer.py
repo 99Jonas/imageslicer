@@ -1425,7 +1425,7 @@ class ImageSlicer(QMainWindow):
         w, h = ps
         x_step_mm = 80  #
         y_Step_mm = 80  #
-        gcode = f"G21\nG90\nM92 X{x_step_mm} Y{y_Step_mm}\nM500\nM74 T{solenoid_time}\nG28 X Y\nG0 F{s * 60}\nG1 F{s * 60}\nM74 R1\nG0 X0 Y0\n"
+        gcode = f"G21\nG90\nM92 X{x_step_mm} Y{y_Step_mm}\nM500\nM74 T{solenoid_time}\nG28 X Y\nG92 X0 Y0\nG0 F{s * 60}\nG1 F{s * 60}\nM74 R1\nG0 X0 Y0\n"
         if adv_pos == False:
             if color == "RGB":
                 for pos, form in color_pos.items():
