@@ -10,6 +10,7 @@ import numpy as np
 import openai
 import requests
 import random
+import math
 
 
 def check_key(api_key):
@@ -1213,15 +1214,15 @@ class ImageSlicer(QMainWindow):
             w_px = adv_settings[2] // pxl_size
             h_px = img_h // pxl_size
 
-            target_resolution = (int(round(w_px)), int(round(h_px)))
+            target_resolution = (int(math.floor(w_px)), int(math.floor(h_px)))
 
             img = img.resize(target_resolution, Image.NEAREST)
             img = self.apply_indexed_color(img, pall)
 
             clr = (255, 255, 255)
 
-            w_px = round(pw / pxl_size)
-            h_px = round(ph / pxl_size)
+            w_px = math.floor(pw / pxl_size)
+            h_px = math.floor(ph / pxl_size)
 
             paper_img = Image.new("RGB", (w_px, h_px), color=clr)
 
@@ -1234,8 +1235,8 @@ class ImageSlicer(QMainWindow):
             )
 
             paste_position = (
-                int(round(adv_settings[0] // pxl_size)),
-                int(round((ph // pxl_size) - ((adv_settings[1] // pxl_size) + (img_h // pxl_size))))
+                int(math.floor(adv_settings[0] // pxl_size)),
+                int(math.floor((ph // pxl_size) - ((adv_settings[1] // pxl_size) + (img_h // pxl_size))))
             )
 
             if img.mode not in ["RGB", "L"]:
@@ -1260,22 +1261,22 @@ class ImageSlicer(QMainWindow):
 
             w, h = img.size
 
-            w_px = round(pw / pxl_size)
-            h_px = round(ph / pxl_size)
+            w_px = math.floor(pw / pxl_size)
+            h_px = math.floor(ph / pxl_size)
 
             if port:
                 if pw / ph < w / h:
-                    h_px = round((h * w_px) / w)
+                    h_px = math.floor((h * w_px) / w)
                     target_resolution = (w_px, h_px)
                 else:
-                    w_px = round((w * h_px) / h)
+                    w_px = math.floor((w * h_px) / h)
                     target_resolution = (w_px, h_px)
             else:
                 if pw / ph > w / h:
-                    w_px = round((w * h_px) / h)
+                    w_px = math.floor((w * h_px) / h)
                     target_resolution = (w_px, h_px)
                 else:
-                    h_px = round((h * w_px) / w)
+                    h_px = math.floor((h * w_px) / w)
                     target_resolution = (w_px, h_px)
 
             img = img.resize(target_resolution, Image.NEAREST)
@@ -1287,8 +1288,8 @@ class ImageSlicer(QMainWindow):
                 pw += float(marg) * 2
                 ph += float(marg) * 2
 
-            w_px = round(pw / pxl_size)
-            h_px = round(ph / pxl_size)
+            w_px = math.floor(pw / pxl_size)
+            h_px = math.floor(ph / pxl_size)
 
             paper_img = Image.new("RGB", (w_px, h_px), color=clr)
 
