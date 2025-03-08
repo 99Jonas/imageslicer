@@ -217,22 +217,6 @@ class CustomColor(QDialog):
         super().accept()
 
 
-class Error(QDialog):
-    def __init__(self, error, parent=None):
-        super(Error, self).__init__(parent)
-        self.setWindowTitle("Error")
-
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
-
-        self.error_message = QLabel(error, self)
-        self.layout.addWidget(self.error_message)
-
-        self.ok_button = QPushButton("Okay", self)
-        self.ok_button.clicked.connect(self.accept)
-        self.layout.addWidget(self.ok_button)
-
-
 class ToggleSwitch(QWidget):
     stateChanged = pyqtSignal(bool)
 
