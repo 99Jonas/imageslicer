@@ -11,6 +11,7 @@ import openai
 import requests
 import random
 import math
+import pyperclip
 
 
 def check_key(api_key):
@@ -591,6 +592,33 @@ class BlackJackShow(QDialog):
         self.exec_()
 
 
+class ShowColors(QDialog):
+    def __init__(self, colors):
+        super().__init__()
+
+        self.colors = colors
+
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+
+        self.question_message = QLabel(colors)
+        self.layout.addWidget(self.question_message)
+
+        self.copy_button = QPushButton("Copy", self)
+        if not os.path.exists("data/color_order.txt"):
+            self.copy_button.setEnabled(False)
+        self.copy_button.clicked.connect(self.copy)
+        self.layout.addWidget(self.copy_button)
+
+        self.close_button = QPushButton("Close", self)
+        self.close_button.clicked.connect(self.reject)
+        self.layout.addWidget(self.close_button)
+
+    def copy(self):
+        self.copy_button.setEnabled(False)
+        pyperclip.copy(self.colors)
+
+
 class ImageSlicer(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -788,10 +816,18 @@ class ImageSlicer(QMainWindow):
 
         self.layout.addLayout(self.slicer_row_layout)
 
+        self.save_color_layout = QHBoxLayout()
+
+        self.colors_button = QPushButton("Show Custom Color Order", self)
+        self.colors_button.clicked.connect(self.show_colors)
+        self.save_color_layout.addWidget(self.colors_button)
+
         self.save_button = QPushButton("Save Image", self)
         self.save_button.setEnabled(False)
         self.save_button.clicked.connect(self.save_image)
-        self.layout.addWidget(self.save_button)
+        self.save_color_layout.addWidget(self.save_button)
+
+        self.layout.addLayout(self.save_color_layout)
 
         self.save_gcode = QPushButton("Save GCode", self)
         self.save_gcode.setEnabled(False)
@@ -835,6 +871,21 @@ class ImageSlicer(QMainWindow):
                 self.display_original_image()
                 self.good = True
                 self.top_reset()
+
+    def show_colors(self):
+        fil = 'data/color_order.txt'
+        if os.path.exists(fil):
+            with open(fil, 'r') as file:
+                unfiltered_colors = file.readlines()
+        unfiltered_colors = [color.strip() for color in unfiltered_colors]
+        filtered_colors = filter_colors(unfiltered_colors)
+        final_colors = ""
+        for color in filtered_colors:
+            final_colors += color
+            final_colors += "\n"
+        dialog = ShowColors(final_colors)
+        dialog.exec_()
+
 
     def display_original_image(self):
         self.rotated = False
@@ -1370,7 +1421,7 @@ class ImageSlicer(QMainWindow):
             return color_group_dict
         elif color == "BW":
             for pos, colr in posdictt.items():
-                if colr == p[0]:
+                if colr == tuple(p[0]):
                     colorlis = [1]
                     color_group_dict[pos] = colorlis
 
@@ -1408,8 +1459,8 @@ class ImageSlicer(QMainWindow):
     def grbl_gen(self, color_pos, px, por, ps, s, pwh, color, adv_pos, solenoid_time):
         pw, ph = pwh
         w, h = ps
-        x_step_mm = 80  #
-        y_Step_mm = 80  #
+        x_step_mm = 99.3
+        y_Step_mm = 53.0
         gcode = f"G21\nG90\nM92 X{x_step_mm} Y{y_Step_mm}\nM500\nM74 T{solenoid_time}\nG28 X Y\nG92 X0 Y0\nG0 F{s * 60}\nG1 F{s * 60}\nM74 R1\nG0 X0 Y0\n"
         if adv_pos == False:
             if color == "RGB":
