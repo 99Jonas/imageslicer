@@ -1428,7 +1428,7 @@ class ImageSlicer(QMainWindow):
         return posdict
 
     def create_groups(self, posdictt, p, pd, px_siz, color):
-        tolerance = float(self.tolerance.currentText())
+        tolerance = float(self.tolerance.currentText()) / px_siz
         color_group_dict = {}
         x_pen_dis, y_pen_dis = map(float, pd)
         x_error = (x_pen_dis / px_siz) % 1
