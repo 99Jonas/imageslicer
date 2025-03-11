@@ -777,6 +777,15 @@ class ImageSlicer(QMainWindow):
         self.y_pen_dis_layout.addWidget(self.y_pen_dis)
         self.y_pen_dis.editingFinished.connect(self.reset)
 
+        self.tolerance_layout = QHBoxLayout()
+        self.layout.addLayout(self.tolerance_layout)
+        self.tolerance_label = QLabel("Tolerance (mm):", self)
+        self.tolerance_layout.addWidget(self.tolerance_label)
+        self.tolerance = QLineEdit(self)
+        self.tolerance.setPlaceholderText("Enter Tolerance")
+        self.tolerance_layout.addWidget(self.tolerance)
+        self.tolerance.editingFinished.connect(self.reset)
+
         self.settings_layout = QHBoxLayout()
 
         self.load_settings_button = QPushButton("Load Settings", self)
@@ -793,6 +802,12 @@ class ImageSlicer(QMainWindow):
 
         self.slicer_row_layout = QHBoxLayout()
         self.checkbox_layout = QHBoxLayout()
+
+        self.accuracy_checkbox = QCheckBox("Accuracy", self)
+        self.accuracy_checkbox.stateChanged.connect(self.reset)
+        self.accuracy_checkbox.stateChanged.connect(self.tolerance_off)
+        self.checkbox_layout.addWidget(self.accuracy_checkbox)
+        self.tolerance.setEnabled(self.accuracy_checkbox.isChecked() == True)
 
         self.advanced_pos_checkbox = QCheckBox("Advanced Positioning", self)
         self.advanced_pos_checkbox.stateChanged.connect(self.reset)
@@ -994,13 +1009,16 @@ class ImageSlicer(QMainWindow):
             file.write(f"{str(self.cpec_checkbox.isChecked())}\n")
             file.write(f"{str(self.solenoid_time.text())}\n")
             file.write(f"{str(self.max_score)}\n")
+            file.write(f"{str(self.accuracy_checkbox.isChecked())}\n")
+            file.write(f"{str(self.tolerance.text())}\n")
+
 
     def save_score(self):
         settings_file = 'data/default_settings.txt'
 
         with open(settings_file, 'r') as file:
             lines = file.readlines()
-            if len(lines) == 14:
+            if len(lines) == 16:
                 set_pixel_size = lines[0].strip()
                 set_page_size = lines[1].strip()
                 set_color_type = lines[2].strip()
@@ -1015,6 +1033,8 @@ class ImageSlicer(QMainWindow):
                 set_cpec_checkbox = lines[11].strip() == "True"
                 set_solenoid_time = lines[12].strip()
                 set_current_score = lines[13].strip()
+                set_accuracy_checkbox = lines[14].strip() == "True"
+                set_tolerance = lines[15].strip()
 
         with open(settings_file, 'w') as file:
             file.write(f"{set_pixel_size}\n")
@@ -1031,6 +1051,8 @@ class ImageSlicer(QMainWindow):
             file.write(f"{str(set_cpec_checkbox)}\n")
             file.write(f"{set_solenoid_time}\n")
             file.write(f"{str(self.current_score)}\n")
+            file.write(f"{str(set_accuracy_checkbox)}\n")
+            file.write(f"{str(set_tolerance)}\n")
 
     def load_default_settings(self):
         self.save_settings.setEnabled(False)
@@ -1039,7 +1061,7 @@ class ImageSlicer(QMainWindow):
         if os.path.exists(settings_file):
             with open(settings_file, 'r') as file:
                 lines = file.readlines()
-                if len(lines) == 14:
+                if len(lines) == 16:
                     self.pixel_size.setText(lines[0].strip())
                     self.page_size.setCurrentText(lines[1].strip())
                     self.color_type.setCurrentText(lines[2].strip())
@@ -1054,6 +1076,8 @@ class ImageSlicer(QMainWindow):
                     self.cpec_checkbox.setChecked((lines[11].strip() == "True"))
                     self.solenoid_time.setText(lines[12].strip())
                     self.max_score = int(lines[13].strip())
+                    self.accuracy_checkbox.setChecked((lines[14].strip() == "True"))
+                    self.tolerance.setText(lines[15].strip())
         else:
             os.makedirs('data')
             with open(settings_file, 'w') as file:
@@ -1404,19 +1428,40 @@ class ImageSlicer(QMainWindow):
         return posdict
 
     def create_groups(self, posdictt, p, pd, px_siz, color):
+        tolerance = float(self.tolerance.currentText())
         color_group_dict = {}
         x_pen_dis, y_pen_dis = map(float, pd)
-        x_del = int(x_pen_dis / px_siz)
-        y_del = int(y_pen_dis / px_siz)
+        x_error = (x_pen_dis / px_siz) % 1
+        y_error = (y_pen_dis / px_siz) % 1
+        x_del = int(x_pen_dis / px_siz) if x_error > tolerance or x_error < -tolerance else (x_pen_dis / px_siz)
+        y_del = int(y_pen_dis / px_siz) if x_error > tolerance or x_error < -tolerance else (x_pen_dis / px_siz)
         if color == "RGB":
             for pos, colr in posdictt.items():
                 colorlis = [1 if colr == tuple(p[3]) else 0,
                             1 if posdictt.get((pos[0] - x_del, pos[1])) == tuple(p[0]) else 0,
                             1 if posdictt.get((pos[0] - x_del, pos[1] - y_del)) == tuple(p[2]) else 0,
-                            1 if posdictt.get((pos[0], pos[1] - y_del)) == tuple(p[1]) else 0
+                            1 if posdictt.get((pos[0],  pos[1] - y_del)) == tuple(p[1]) else 0
                             ]
                 if colorlis != [0, 0, 0, 0]:
                     color_group_dict[pos] = colorlis
+
+                if y_error > tolerance or y_error < -tolerance and x_error <= tolerance and x_error >= -tolerance:
+                    pos = (pos[0], pos[1] + y_error)
+                    colorlis = [0, 0, 1 if posdictt.get((pos[0] - x_del, pos[1] - (y_pen_dis / px_siz))) == tuple(p[2]) else 0, 1 if posdictt.get((pos[0], pos[1] - (y_pen_dis / px_siz))) == tuple(p[1]) else 0]
+                    if colorlis != [0, 0, 0, 0]:
+                        color_group_dict[pos] = colorlis
+
+                if x_error > tolerance or x_error < -tolerance and y_error <= tolerance and y_error >= -tolerance:
+                    pos = (pos[0] + x_error, pos[1])
+                    colorlis = [0, 1 if posdictt.get((pos[0] - (x_pen_dis / px_siz), pos[1])) == tuple(p[0]) else 0, 1 if posdictt.get((pos[0] - x_del, pos[1] - (y_pen_dis / px_siz))) == tuple(p[2]) else 0, 0]
+                    if colorlis != [0, 0, 0, 0]:
+                        color_group_dict[pos] = colorlis
+
+                if (x_error > tolerance or x_error < -tolerance) and (y_error > tolerance or y_error < -tolerance):
+                    pos = (pos[0] + x_error, pos[1])
+                    colorlis = [0, 0, 0, 0]
+                    if colorlis != [0, 0, 0, 0]:
+                        color_group_dict[pos] = colorlis
 
             return color_group_dict
         elif color == "BW":
@@ -1561,6 +1606,10 @@ class ImageSlicer(QMainWindow):
     def margin_off(self):
         on = self.advanced_pos_checkbox.isChecked() == False
         self.margin.setEnabled(on)
+
+    def tolerance_off(self):
+        on = self.accuracy_checkbox.isChecked() == True
+        self.tolerance.setEnabled(on)
 
     def gen_img(self, description):
         client = openai.OpenAI(api_key=self.ai_key)
