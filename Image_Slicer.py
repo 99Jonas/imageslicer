@@ -1406,8 +1406,8 @@ class ImageSlicer(QMainWindow):
 
         xpen, ypen = pendist
         width, height = img.size
-        realwidth = width + (int(xpen / px_siz))
-        realheight = height + (int(ypen / px_siz))
+        realwidth = width + (math.ceil(xpen / px_siz))
+        realheight = height + (math.ceil(ypen / px_siz))
 
         posdict = {}
         rev = 0
@@ -1435,7 +1435,7 @@ class ImageSlicer(QMainWindow):
         x_error = (x_pen_dis / px_siz) % 1
         y_error = (y_pen_dis / px_siz) % 1
         x_del = int(x_pen_dis / px_siz) if x_error > tolerance or x_error < -tolerance else (x_pen_dis / px_siz)
-        y_del = int(y_pen_dis / px_siz) if x_error > tolerance or x_error < -tolerance else (x_pen_dis / px_siz)
+        y_del = int(y_pen_dis / px_siz) if x_error > tolerance or x_error < -tolerance else (y_pen_dis / px_siz)
         if color == "RGB":
             for pos, colr in posdictt.items():
                 colorlis = [1 if colr == tuple(p[3]) else 0,
@@ -1487,6 +1487,34 @@ class ImageSlicer(QMainWindow):
                                 ]
                     if colorlis != [0, 0, 0, 0]:
                         color_group_dict[pos] = colorlis
+
+                    if self.accuracy_checkbox.isChecked():
+                        if y_error > tolerance or y_error < -tolerance and x_error <= tolerance and x_error >= -tolerance:
+                            pos = (pos[0], pos[1] + y_error)
+                            colorlis = [0, 0,
+                                        1 if posdictt.get((pos[0] - x_del, pos[1] - (y_pen_dis / px_siz))) == tuple(
+                                            p[2]) else 0,
+                                        1 if posdictt.get((pos[0], pos[1] - (y_pen_dis / px_siz))) == tuple(
+                                            p[1]) else 0]
+                            if colorlis != [0, 0, 0, 0]:
+                                color_group_dict[pos] = colorlis
+
+                        if x_error > tolerance or x_error < -tolerance and y_error <= tolerance and y_error >= -tolerance:
+                            pos = (pos[0] + x_error, pos[1])
+                            colorlis = [0, 1 if posdictt.get((pos[0] - (x_pen_dis / px_siz), pos[1])) == tuple(
+                                p[0]) else 0,
+                                        1 if posdictt.get((pos[0] - x_del, pos[1] - (y_pen_dis / px_siz))) == tuple(
+                                            p[2]) else 0, 0]
+                            if colorlis != [0, 0, 0, 0]:
+                                color_group_dict[pos] = colorlis
+
+                        if (x_error > tolerance or x_error < -tolerance) and (
+                                y_error > tolerance or y_error < -tolerance):
+                            pos = (pos[0] + x_error, pos[1])
+                            colorlis = [0, 0, 0, 0]
+                            if colorlis != [0, 0, 0, 0]:
+                                color_group_dict[pos] = colorlis
+
                 p = p[4:]
                 color_group_lis.append(color_group_dict)
             color_group_dict = {}
