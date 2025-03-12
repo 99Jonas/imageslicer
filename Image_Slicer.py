@@ -180,13 +180,6 @@ class CustomColor(QDialog):
         self.resize(600, 400)
 
     def addItem(self, text):
-        itemWidget = ListItemWidget(text, self.editItem, lambda: self.deleteItem(itemWidget))
-        item = QListWidgetItem()
-        item.setSizeHint(itemWidget.sizeHint())
-        self.listWidget.addItem(item)
-        self.listWidget.setItemWidget(item, itemWidget)
-
-    def addItem(self, text):
         hex_color = color_to_hex(text)
         if hex_color != "":
             item = QListWidgetItem(hex_color)
@@ -203,35 +196,26 @@ class CustomColor(QDialog):
         self.inputField.clear()
         self.currentItem = None
 
-    def deleteItem(self, widget):
-        for i in range(self.listWidget.count()):
-            item = self.listWidget.item(i)
-            if self.listWidget.itemWidget(item) == widget:
-                self.listWidget.takeItem(i)
-                break
-
     def use_last(self):
         if os.path.exists('data/color_order.txt'):
             with open('data/color_order.txt', 'r') as file:
                 lines = [line.strip() for line in file if line.strip()]
 
             if self.use_last_checkbox.isChecked():
-                existing_items = {self.listWidget.itemWidget(self.listWidget.item(i)).lineEdit.text()
-                                  for i in range(self.listWidget.count())}
+                existing_items = {self.listWidget.item(i).text() for i in range(self.listWidget.count())}
                 for line in lines:
-                    if line not in existing_items:
-                        self.addItem(line)
+                    hex_color = color_to_hex(line)
+                    if hex_color not in existing_items:
+                        self.addItem(hex_color)
             else:
                 items_to_remove = set(lines)
                 for i in range(self.listWidget.count() - 1, -1, -1):
                     item = self.listWidget.item(i)
-                    widget = self.listWidget.itemWidget(item)
-                    if widget and widget.lineEdit.text() in items_to_remove:
+                    if item.text() in items_to_remove:
                         self.listWidget.takeItem(i)
 
     def accept(self):
-        self.items = [self.listWidget.itemWidget(self.listWidget.item(i)).lineEdit.text() for i in
-                      range(self.listWidget.count())]
+        self.items = [self.listWidget.item(i).text() for i in range(self.listWidget.count())]
         super().accept()
 
 
@@ -1091,7 +1075,7 @@ class ImageSlicer(QMainWindow):
                     self.rotate_checkbox.setChecked((lines[10].strip() == "True"))
                     self.cpec_checkbox.setChecked((lines[11].strip() == "True"))
                     self.solenoid_time.setText(lines[12].strip())
-                    self.max_score = int(lines[13].strip())
+                    self.max_score = float(lines[13].strip())
                     self.accuracy_checkbox.setChecked((lines[14].strip() == "True"))
                     self.tolerance.setText(lines[15].strip())
         else:
