@@ -12,6 +12,7 @@ import requests
 import random
 import math
 import pyperclip
+import matplotlib.colors as mcolors
 
 
 def check_key(api_key):
@@ -28,6 +29,19 @@ def check_key(api_key):
         return False
     else:
         return True
+
+
+def color_to_hex(color_name_or_hex):
+    try:
+        if all(c in "0123456789abcdefABCDEF" for c in color_name_or_hex) and len(color_name_or_hex) in [3, 6]:
+            return color_name_or_hex.lower()
+        rgba = mcolors.to_rgba(color_name_or_hex)  # Convert to RGBA tuple
+        hex_color = '{:02x}{:02x}{:02x}'.format(
+            int(rgba[0] * 255), int(rgba[1] * 255), int(rgba[2] * 255)
+        )
+        return hex_color
+    except ValueError:
+        return ""
 
 
 def sec_to_binary(x):
@@ -172,18 +186,20 @@ class CustomColor(QDialog):
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, itemWidget)
 
-    def editItem(self, widget):
-        self.currentItem = widget
-        self.inputField.setText(widget.lineEdit.text())
-        widget.lineEdit.setReadOnly(False)
-        widget.editButton.setText("Editing...")
+    def addItem(self, text):
+        hex_color = color_to_hex(text)
+        if hex_color != "":
+            item = QListWidgetItem(hex_color)
+            self.listWidget.addItem(item)
 
     def saveItem(self):
         text = self.inputField.text()
-        if self.currentItem:
-            self.currentItem.setText(text)
-        else:
-            self.addItem(text)
+        hex_color = color_to_hex(text)
+        if hex_color != "":
+            if self.currentItem:
+                self.currentItem.setText(hex_color)
+            else:
+                self.addItem(hex_color)
         self.inputField.clear()
         self.currentItem = None
 
