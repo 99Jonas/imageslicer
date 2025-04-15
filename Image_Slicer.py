@@ -640,6 +640,7 @@ class ImageSlicer(QMainWindow):
         self.rotated = False
         self.bed_width = 687
         self.bed_height = 640
+        self.slow_speed = 300
         self.egg_url = "https://www.akc.org/wp-content/uploads/2017/11/Pembroke-Welsh-Corgi-standing-outdoors-in-the-fall.jpg"
         if os.path.exists('data/default_settings.txt'):
             with open('data/default_settings.txt', 'r') as file:
@@ -1532,6 +1533,7 @@ class ImageSlicer(QMainWindow):
             return color_group_lis
 
     def grbl_gen(self, color_pos, px, por, ps, s, pwh, color, adv_pos, solenoid_time):
+        slow = False
         pw, ph = pwh
         w, h = ps
         x_step_mm = 99.3
@@ -1541,6 +1543,9 @@ class ImageSlicer(QMainWindow):
             if color == "RGB":
                 for pos, form in color_pos.items():
                     x, y = pos
+                    if y * px >= 590:
+                        gcode += f"G0 F{self.slow_speed}\n"
+                        slow = True
                     if por:
                         movh = (ph - h * px) / 2
                         movw = (pw - w * px) / 2
@@ -1549,12 +1554,18 @@ class ImageSlicer(QMainWindow):
                         movh = (ph - w * px) / 2
                         movw = (pw - h * px) / 2
                         gcode += f"G0 X{(px * x) + movw} Y{(px * y) + movh}\nM74 A{form[0]} B{form[1]} C{form[2]} D{form[3]}\n"
+                    if slow:
+                        slow = False
+                        gcode += f"G0 F{s * 60}\n"
 
                 gcode = add_gcode(gcode, pw, self.cpec_checkbox.isChecked())
                 return gcode
             elif color == "BW":
                 for pos, form in color_pos.items():
                     x, y = pos
+                    if y * px >= 590:
+                        gcode += f"G0 F{self.slow_speed}\n"
+                        slow = True
                     if por:
                         movh = (ph - h * px) / 2
                         movw = (pw - w * px) / 2
@@ -1563,6 +1574,9 @@ class ImageSlicer(QMainWindow):
                         movh = (ph - w * px) / 2
                         movw = (pw - h * px) / 2
                         gcode += f"G0 X{(px * x) + movw} Y{(px * y) + movh}\nM74 A1 B0 C0 D0\n"
+                    if slow:
+                        slow = False
+                        gcode += f"G0 F{s * 60}\n"
 
                 gcode = add_gcode(gcode, pw, self.cpec_checkbox.isChecked())
                 return gcode
@@ -1571,6 +1585,9 @@ class ImageSlicer(QMainWindow):
                 for dict in color_pos:
                     for pos, form in dict.items():
                         x, y = pos
+                        if y * px >= 590:
+                            gcode += f"G0 F{self.slow_speed}\n"
+                            slow = True
                         if por:
                             movh = (ph - h * px) / 2
                             movw = (pw - w * px) / 2
@@ -1579,6 +1596,9 @@ class ImageSlicer(QMainWindow):
                             movh = (ph - w * px) / 2
                             movw = (pw - h * px) / 2
                             gcode += f"G0 X{(px * x) + movw} Y{(px * y) + movh}\nM74 A{form[0]} B{form[1]} C{form[2]} D{form[3]}\n"
+                        if slow:
+                            slow = False
+                            gcode += f"G0 F{s * 60}\n"
 
                     gcode += f"G0 X0 Y0\n"
                     rand += 1
@@ -1593,13 +1613,25 @@ class ImageSlicer(QMainWindow):
             if color == "RGB":
                 for pos, form in color_pos.items():
                     x, y = pos
+                    if y * px >= 590:
+                        gcode += f"G0 F{self.slow_speed}\n"
+                        slow = True
                     gcode += f"G0 X{(px * x) + x_pos} Y{(px * y) + y_pos}\nM74 A{form[0]} B{form[1]} C{form[2]} D{form[3]}\n"
+                    if slow:
+                        slow = False
+                        gcode += f"G0 F{s * 60}\n"
                 gcode = add_gcode(gcode, pw, self.cpec_checkbox.isChecked())
                 return gcode
             elif color == "BW":
                 for pos, form in color_pos.items():
                     x, y = pos
+                    if y * px >= 590:
+                        gcode += f"G0 F{self.slow_speed}\n"
+                        slow = True
                     gcode += f"G0 X{(px * x) + x_pos} Y{(px * y) + y_pos}\nM74 A1 B0 C0 D0\n"
+                    if slow:
+                        slow = False
+                        gcode += f"G0 F{s * 60}\n"
                 gcode = add_gcode(gcode, pw, self.cpec_checkbox.isChecked())
                 return gcode
             else:
@@ -1607,7 +1639,13 @@ class ImageSlicer(QMainWindow):
                 for dict in color_pos:
                     for pos, form in dict.items():
                         x, y = pos
+                        if y * px >= 590:
+                            gcode += f"G0 F{self.slow_speed}\n"
+                            slow = True
                         gcode += f"G0 X{(px * x) + x_pos} Y{(px * y) + y_pos}\nM74 A{form[0]} B{form[1]} C{form[2]} D{form[3]}\n"
+                        if slow:
+                            slow = False
+                            gcode += f"G0 F{s * 60}\n"
                     gcode += f"G0 X0 Y0\n"
                     rand += 1
                     if rand < len(color_pos):
